@@ -1,6 +1,0 @@
-app
-fastapi
-pydantic
-pytest
-sqlalchemy
-streamlit

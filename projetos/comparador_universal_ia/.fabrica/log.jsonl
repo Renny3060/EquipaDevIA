@@ -1,6 +1,0 @@
-{"t": "18:04:52", "kind": "fase", "agent": "", "msg": "Planeamento: requisitos"}
-{"t": "18:04:52", "kind": "agente", "agent": "Product Owner", "msg": "a trabalhar..."}
-{"t": "18:19:54", "kind": "erro", "agent": "", "msg": "ReadTimeout: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=900)"}
-{"t": "18:27:40", "kind": "fase", "agent": "", "msg": "Planeamento: requisitos"}
-{"t": "18:27:40", "kind": "agente", "agent": "Product Owner", "msg": "a trabalhar..."}
-{"t": "18:42:42", "kind": "erro", "agent": "", "msg": "ReadTimeout: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=900)"}
