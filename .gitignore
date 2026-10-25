@@ -1,0 +1,22 @@
+# Ambientes virtuais
+venv/
+.venv/
+env/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# CrewAI (protótipo main.py)
+.crewai/
+
+# Ficheiros temporários e do sistema
+temp_output.txt
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/

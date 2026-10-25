@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Licenças</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 font-sans">
+
+<div class="container mx-auto p-4">
+    <!-- Painel Principal -->
+    <div class="grid grid-cols-3 gap-4 mb-8">
+        <div class="bg-white shadow-md rounded-lg p-4 text-center">
+            <h2>Total de Licenças</h2>
+            <p id="totalLicenses">0</p>
+        </div>
+        <div class="bg-white shadow-md rounded-lg p-4 text-center">
+            <h2>Licenças Ativas</h2>
+            <p id="activeLicenses">0</p>
+        </div>
+        <div class="bg-white shadow-md rounded-lg p-4 text-center">
+            <h2>Revogadas/Expiradas</h2>
+            <p id="revokedOrExpiredLicenses">0</p>
+        </div>
+    </div>
+
+    <!-- Módulo de Geração de Licenças -->
+    <div class="bg-white shadow-md rounded-lg p-4 mb-8">
+        <h2>Geração de Licença</h2>
+        <form id="generateLicenseForm" onsubmit="event.preventDefault(); generateLicense()">
+            <input type="email" id="email" placeholder="Email do cliente" required class="w-full px-3 py-2 border rounded mb-4">
+            <input type="number" id="daysValidity" min="1" placeholder="Validade em dias" required class="w-full px-3 py-2 border rounded mb-4">
+            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700">Gerar Licença</button>
+        </form>
+        <div id="licenseKeyContainer" class="mt-4"></div>
+    </div>
+
+    <!-- Módulo de Validação -->
+    <div class="bg-white shadow-md rounded-lg p-4 mb-8">
+        <h2>Validação de Licença</h2>
+        <form id="validateLicenseForm" onsubmit="event.preventDefault(); validateLicense()">
+            <input type="text" id="licenseKey" placeholder="Chave da licença" required class="w-full px-3 py-2 border rounded mb-4">
+            <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700">Verificar Estado</button>
+        </form>
+        <div id="validationResultContainer" class="mt-4"></div>
+    </div>
+
+    <!-- Módulo de Revogação -->
+    <div class="bg-white shadow-md rounded-lg p-4">
+        <h2>Revogação de Licença</h2>
+        <form id="revokeLicenseForm" onsubmit="event.preventDefault(); revokeLicense()">
+            <input type="text" id="licenseKeyRevoke" placeholder="Chave da licença" required class="w-full px-3 py-2 border rounded mb-4">
+            <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700">Revogar Licença</button>
+        </form>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        async function fetchLicenses() {
+            const response = await fetch('/api/licenses');
+            const data = await response.json();
+            document.getElementById('totalLicenses').innerText = data.total;
+            document.getElementById('activeLicenses').innerText = data.active;
+            document.getElementById('revokedOrExpiredLicenses').innerText = data.revoked_or_expired;
+        }
+
+        async function generateLicense() {
+            const email = document.getElementById('email').value;
+            const daysValidity = parseInt(document.getElementById('daysValidity').value);
+            const response = await fetch('/api/licenses', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, days_validity: daysValidity })
+            });
+            if (response.ok) {
+                const data = await response.json();
+                document.getElementById('licenseKeyContainer').innerHTML = `
+                    <p class="text-lg font-bold">Chave Gerada:</p>
+                    <div class="bg-gray-200 p-4 rounded mb-4">
+                        ${data.license_key}
+                        <button onclick="copyToClipboard('${data.license_key}')" class="ml-2 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-700">Copiar</button>
+                    </div>
+                `;
+            } else {
+                alert('Erro ao gerar licença');
+            }
+        }
+
+        async function validateLicense() {
+            const licenseKey = document.getElementById('licenseKey').value;
+            const response = await fetch('/api/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ license_key: licenseKey })
+            });
+            if (response.ok) {
+                const data = await response.json();
+                document.getElementById('validationResultContainer').innerHTML = `
+                    <div class="bg-green-100 p-4 rounded mb-4" style="${data.valid ? 'display:block' : 'display:none'}">
+                        <p class="text-lg font-bold">Estado da Licença: VÁLIDA</p>
+                        <p>Expira em ${data.expires_in_days} dias</p>
+                    </div>
+                    <div class="bg-red-100 p-4 rounded mb-4" style="${!data.valid && data.reason === 'Revoked' ? 'display:block' : 'display:none'}">
+                        <p class="text-lg font-bold">Estado da Licença: REVOGADA</p>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded mb-4" style="${!data.valid && data.reason === 'Expired' ? 'display:block' : 'display:none'}">
+                        <p class="text-lg font-bold">Estado da Licença: EXPIRADA</p>
+                    </div>
+                `;
+            } else {
+                document.getElementById('validationResultContainer').innerHTML = `
+                    <div class="bg-red-100 p-4 rounded mb-4">
+                        <p class="text-lg font-bold">Estado da Licença: NÃO ENCONTRADA</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function revokeLicense() {
+            const licenseKey = document.getElementById('licenseKeyRevoke').value;
+            const response = await fetch('/api/revoke', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ license_key: licenseKey })
+            });
+            if (response.ok) {
+                alert('Licença revogada com sucesso');
+            } else {
+                alert('Erro ao revogar licença');
+            }
+        }
+
+        function copyToClipboard(text) {
+            const tempInput = document.createElement('input');
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            alert('Chave copiada para a área de transferência');
+        }
+
+        fetchLicenses();
+    </script>
+</div>
+
+</body>
+</html>
